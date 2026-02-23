@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF 字段标注工具</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="toolbar">
+    <label class="file-label">
+      <span>选择 PDF</span>
+      <input type="file" id="fileInput" accept="application/pdf" />
+    </label>
+    <span id="status" class="status"></span>
+  </header>
+
+  <main class="main">
+    <div id="pdfContainer" class="pdf-container"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
