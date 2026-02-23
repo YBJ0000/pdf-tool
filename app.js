@@ -19,6 +19,11 @@
   /** 每页的 overlay 引用，用于选中时重绘高亮 */
   const overlaysByPage = [];
 
+  const HANDLE_SIZE = 8;
+  const MIN_RECT_SIZE = 5;
+  /** 当前是否在拖拽调整大小：{ fieldIndex, corner, overlay, pageNum } */
+  let resizeState = null;
+
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -33,11 +38,16 @@
     fields.length = 0;
     overlaysByPage.length = 0;
     selectedIndex = -1;
+    if (resizeState) {
+      document.removeEventListener('mousemove', onResizeMove);
+      document.removeEventListener('mouseup', onResizeUp);
+      resizeState = null;
+    }
     renderFieldList();
     hideForm();
   }
 
-  /** 在某一页的 overlay 上重绘所有该页的矩形 + 当前拖拽中的矩形；selectedIdx 用于高亮选中项 */
+  /** 在某一页的 overlay 上重绘所有该页的矩形 + 当前拖拽中的矩形；selectedIdx 用于高亮选中项；选中项画四角手柄 */
   function drawOverlay(overlay, pageNum, dragRect, selectedIdx) {
     const ctx = overlay.getContext('2d');
     const w = overlay.width;
@@ -51,6 +61,22 @@
       ctx.setLineDash([]);
       ctx.strokeRect(f.x, f.y, f.width, f.height);
     });
+
+    if (selectedIdx >= 0) {
+      const sel = fields[selectedIdx];
+      if (sel && sel.page === pageNum) {
+        const hs = HANDLE_SIZE / 2;
+        ctx.fillStyle = 'rgba(255, 193, 7, 0.9)';
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 1;
+        [[sel.x, sel.y], [sel.x + sel.width, sel.y], [sel.x, sel.y + sel.height], [sel.x + sel.width, sel.y + sel.height]].forEach(function (corner) {
+          const cx = corner[0];
+          const cy = corner[1];
+          ctx.fillRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
+          ctx.strokeRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
+        });
+      }
+    }
 
     if (dragRect) {
       ctx.strokeStyle = 'rgba(255, 152, 0, 0.9)';
@@ -78,6 +104,70 @@
     };
   }
 
+  /** 若 (localX, localY) 在当前选中框的某个角柄上，返回 { corner }，否则返回 null */
+  function getHandleAt(overlay, pageNum, localX, localY) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return null;
+    const f = fields[selectedIndex];
+    if (f.page !== pageNum) return null;
+    const hs = HANDLE_SIZE / 2;
+    const corners = [
+      { corner: 'nw', x: f.x, y: f.y },
+      { corner: 'ne', x: f.x + f.width, y: f.y },
+      { corner: 'sw', x: f.x, y: f.y + f.height },
+      { corner: 'se', x: f.x + f.width, y: f.y + f.height },
+    ];
+    for (var i = 0; i < corners.length; i++) {
+      var c = corners[i];
+      if (localX >= c.x - hs && localX <= c.x + hs && localY >= c.y - hs && localY <= c.y + hs) {
+        return { corner: c.corner };
+      }
+    }
+    return null;
+  }
+
+  /** 根据拖拽角与当前鼠标位置更新字段的 x,y,width,height */
+  function applyResize(fieldIndex, corner, localX, localY) {
+    const f = fields[fieldIndex];
+    if (!f) return;
+    var x = f.x, y = f.y, w = f.width, h = f.height;
+    if (corner === 'nw') {
+      x = Math.min(localX, f.x + f.width - MIN_RECT_SIZE);
+      y = Math.min(localY, f.y + f.height - MIN_RECT_SIZE);
+      w = f.x + f.width - x;
+      h = f.y + f.height - y;
+    } else if (corner === 'ne') {
+      y = Math.min(localY, f.y + f.height - MIN_RECT_SIZE);
+      w = Math.max(MIN_RECT_SIZE, localX - f.x);
+      h = f.y + f.height - y;
+    } else if (corner === 'sw') {
+      x = Math.min(localX, f.x + f.width - MIN_RECT_SIZE);
+      w = f.x + f.width - x;
+      h = Math.max(MIN_RECT_SIZE, localY - f.y);
+    } else if (corner === 'se') {
+      w = Math.max(MIN_RECT_SIZE, localX - f.x);
+      h = Math.max(MIN_RECT_SIZE, localY - f.y);
+    }
+    f.x = x;
+    f.y = y;
+    f.width = w;
+    f.height = h;
+  }
+
+  function onResizeMove(e) {
+    if (!resizeState) return;
+    const { x, y } = getLocalCoords(resizeState.overlay, e.clientX, e.clientY);
+    applyResize(resizeState.fieldIndex, resizeState.corner, x, y);
+    drawOverlay(resizeState.overlay, resizeState.pageNum, null, selectedIndex);
+  }
+
+  function onResizeUp(e) {
+    if (!resizeState) return;
+    document.removeEventListener('mousemove', onResizeMove);
+    document.removeEventListener('mouseup', onResizeUp);
+    resizeState = null;
+    setStatus('已调整框大小');
+  }
+
   function setupOverlay(wrapper, canvas, pageNum) {
     const overlay = document.createElement('canvas');
     overlay.className = 'pdf-overlay';
@@ -89,11 +179,29 @@
 
     overlay.addEventListener('mousedown', function (e) {
       const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
+      const handle = getHandleAt(overlay, pageNum, x, y);
+      if (handle) {
+        e.preventDefault();
+        resizeState = { fieldIndex: selectedIndex, corner: handle.corner, overlay: overlay, pageNum: pageNum };
+        document.addEventListener('mousemove', onResizeMove);
+        document.addEventListener('mouseup', onResizeUp);
+        return;
+      }
       dragStart = { x, y };
     });
 
     overlay.addEventListener('mousemove', function (e) {
-      if (!dragStart) return;
+      if (resizeState) return;
+      if (!dragStart) {
+        const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
+        const handle = getHandleAt(overlay, pageNum, x, y);
+        if (handle) {
+          overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+        } else {
+          overlay.style.cursor = 'crosshair';
+        }
+        return;
+      }
       const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
       const dragRect = {
         x: Math.min(dragStart.x, x),
@@ -105,6 +213,7 @@
     });
 
     overlay.addEventListener('mouseup', function (e) {
+      if (resizeState) return;
       if (!dragStart) return;
       const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
       const x1 = Math.min(dragStart.x, x);
@@ -125,6 +234,7 @@
     });
 
     overlay.addEventListener('mouseleave', function () {
+      if (resizeState) return;
       if (dragStart) {
         dragStart = null;
         drawOverlay(overlay, pageNum, null, selectedIndex);
