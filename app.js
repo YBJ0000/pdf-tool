@@ -380,6 +380,8 @@
     fieldTypeSelect.value = f.type || 'string';
     fieldDescriptionInput.value = f.description || '';
     showForm();
+    var pageEl = pdfContainer.querySelector('.pdf-page-wrapper[data-page="' + String(f.page) + '"]');
+    if (pageEl) pageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function syncFormToField() {
