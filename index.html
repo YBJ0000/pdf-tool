@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF 字段标注工具</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="toolbar">
+    <label class="file-label">
+      <span>选择 PDF</span>
+      <input type="file" id="fileInput" accept="application/pdf" />
+    </label>
+    <button type="button" id="exportBtn" class="btn-export" disabled>导出 JSON</button>
+    <span id="status" class="status"></span>
+  </header>
+
+  <main class="main">
+    <div id="pdfContainer" class="pdf-container"></div>
+    <aside id="sidebar" class="sidebar">
+      <h3 class="sidebar-title">字段列表</h3>
+      <ul id="fieldList" class="field-list"></ul>
+      <div id="fieldForm" class="field-form hidden">
+        <h4 class="form-title">编辑字段</h4>
+        <label class="form-label">name</label>
+        <input type="text" id="fieldName" class="form-input" placeholder="字段名" />
+        <label class="form-label">type</label>
+        <select id="fieldType" class="form-select">
+          <option value="string">string</option>
+          <option value="number">number</option>
+          <option value="date">date</option>
+          <option value="boolean">boolean</option>
+        </select>
+        <label class="form-label">description</label>
+        <textarea id="fieldDescription" class="form-textarea" placeholder="描述" rows="3"></textarea>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
