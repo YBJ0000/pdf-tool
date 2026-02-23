@@ -17,6 +17,24 @@
 
   <main class="main">
     <div id="pdfContainer" class="pdf-container"></div>
+    <aside id="sidebar" class="sidebar">
+      <h3 class="sidebar-title">字段列表</h3>
+      <ul id="fieldList" class="field-list"></ul>
+      <div id="fieldForm" class="field-form hidden">
+        <h4 class="form-title">编辑字段</h4>
+        <label class="form-label">name</label>
+        <input type="text" id="fieldName" class="form-input" placeholder="字段名" />
+        <label class="form-label">type</label>
+        <select id="fieldType" class="form-select">
+          <option value="string">string</option>
+          <option value="number">number</option>
+          <option value="date">date</option>
+          <option value="boolean">boolean</option>
+        </select>
+        <label class="form-label">description</label>
+        <textarea id="fieldDescription" class="form-textarea" placeholder="描述" rows="3"></textarea>
+      </div>
+    </aside>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
