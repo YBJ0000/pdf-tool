@@ -173,6 +173,8 @@
     overlay.className = 'pdf-overlay';
     overlay.width = canvas.width;
     overlay.height = canvas.height;
+    if (canvas.style.width) overlay.style.width = canvas.style.width;
+    if (canvas.style.height) overlay.style.height = canvas.style.height;
     overlay.dataset.page = String(pageNum);
 
     let dragStart = null;
@@ -256,9 +258,12 @@
       const numPages = pdf.numPages;
       setStatus('共 ' + numPages + ' 页，渲染中…');
 
+      const pixelRatio = window.devicePixelRatio || 1;
+      const scale = 1.5 * pixelRatio;
+
       for (let pageNum = 1; pageNum <= numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale: scale });
 
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper';
@@ -273,6 +278,8 @@
         const ctx = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+        canvas.style.width = viewport.width / pixelRatio + 'px';
+        canvas.style.height = viewport.height / pixelRatio + 'px';
 
         wrapper.appendChild(canvas);
         pdfContainer.appendChild(wrapper);
