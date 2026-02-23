@@ -32,6 +32,26 @@ body {
   display: none;
 }
 
+.btn-export {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #198754;
+  color: #fff;
+  border: none;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #157347;
+}
+
+.btn-export:disabled {
+  background: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
 .status {
   font-size: 0.85rem;
   color: #888;

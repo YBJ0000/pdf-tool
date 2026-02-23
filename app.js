@@ -1,5 +1,5 @@
 /**
- * Step 1–3: 显示 PDF、画矩形、列表 + 表单填 name/type/description
+ * Step 1–4: 显示 PDF、画矩形、列表+表单、导出 JSON
  */
 (function () {
   const fileInput = document.getElementById('fileInput');
@@ -10,6 +10,7 @@
   const fieldNameInput = document.getElementById('fieldName');
   const fieldTypeSelect = document.getElementById('fieldType');
   const fieldDescriptionInput = document.getElementById('fieldDescription');
+  const exportBtn = document.getElementById('exportBtn');
 
   /** 已绘制的字段，每项为 { x, y, width, height, page, name, type, description } */
   const fields = [];
@@ -204,6 +205,7 @@
       });
       fieldListEl.appendChild(li);
     });
+    exportBtn.disabled = fields.length === 0;
   }
 
   function showForm() {
@@ -246,4 +248,33 @@
   fieldTypeSelect.addEventListener('change', syncFormToField);
   fieldDescriptionInput.addEventListener('input', syncFormToField);
   fieldDescriptionInput.addEventListener('change', syncFormToField);
+
+  /** 按 mission 格式导出 JSON 并下载 */
+  function exportJson() {
+    var payload = {
+      fields: fields.map(function (f) {
+        return {
+          name: f.name || '',
+          type: f.type || 'string',
+          description: f.description || '',
+          x: f.x,
+          y: f.y,
+          width: f.width,
+          height: f.height,
+          page: f.page,
+        };
+      }),
+    };
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fields.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus('已导出 ' + fields.length + ' 个字段');
+  }
+
+  exportBtn.addEventListener('click', exportJson);
 })();
