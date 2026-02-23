@@ -198,14 +198,45 @@
     fields.forEach(function (f, i) {
       const li = document.createElement('li');
       li.dataset.index = String(i);
-      li.textContent = '字段 ' + (i + 1) + (f.name ? ' · ' + f.name : '') + ' (第 ' + f.page + ' 页)';
       li.classList.toggle('selected', i === selectedIndex);
-      li.addEventListener('click', function () {
+
+      const label = document.createElement('span');
+      label.className = 'field-list-label';
+      label.textContent = '字段 ' + (i + 1) + (f.name ? ' · ' + f.name : '') + ' (第 ' + f.page + ' 页)';
+      label.addEventListener('click', function () {
         selectField(i);
       });
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'field-delete';
+      delBtn.title = '删除';
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        deleteField(i);
+      });
+
+      li.appendChild(label);
+      li.appendChild(delBtn);
       fieldListEl.appendChild(li);
     });
     exportBtn.disabled = fields.length === 0;
+  }
+
+  /** 删除指定下标的字段，并同步列表与 overlay */
+  function deleteField(index) {
+    if (index < 0 || index >= fields.length) return;
+    fields.splice(index, 1);
+    if (selectedIndex === index) {
+      selectedIndex = -1;
+      hideForm();
+    } else if (selectedIndex > index) {
+      selectedIndex--;
+    }
+    renderFieldList();
+    redrawAllOverlays();
+    setStatus('已删除，剩余 ' + fields.length + ' 个字段');
   }
 
   function showForm() {
@@ -277,4 +308,12 @@
   }
 
   exportBtn.addEventListener('click', exportJson);
+
+  document.addEventListener('keydown', function (e) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return;
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    e.preventDefault();
+    deleteField(selectedIndex);
+  });
 })();
