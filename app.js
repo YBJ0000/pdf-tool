@@ -21,6 +21,7 @@
 
   const HANDLE_SIZE = 8;
   const MIN_RECT_SIZE = 5;
+  const CLOSE_BUTTON_SIZE = 18;
   /** 当前是否在拖拽调整大小：{ fieldIndex, corner, overlay, pageNum } */
   let resizeState = null;
 
@@ -75,6 +76,20 @@
           ctx.fillRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
           ctx.strokeRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
         });
+        var btnX = sel.x + sel.width - CLOSE_BUTTON_SIZE - 4;
+        var btnY = sel.y + 4;
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(btnX, btnY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeRect(btnX, btnY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(btnX + 4, btnY + 4);
+        ctx.lineTo(btnX + CLOSE_BUTTON_SIZE - 4, btnY + CLOSE_BUTTON_SIZE - 4);
+        ctx.moveTo(btnX + CLOSE_BUTTON_SIZE - 4, btnY + 4);
+        ctx.lineTo(btnX + 4, btnY + CLOSE_BUTTON_SIZE - 4);
+        ctx.stroke();
       }
     }
 
@@ -123,6 +138,16 @@
       }
     }
     return null;
+  }
+
+  /** 若 (localX, localY) 在当前选中框的关闭按钮内，返回 true */
+  function getCloseButtonHit(overlay, pageNum, localX, localY) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return false;
+    const f = fields[selectedIndex];
+    if (f.page !== pageNum) return false;
+    var btnX = f.x + f.width - CLOSE_BUTTON_SIZE - 4;
+    var btnY = f.y + 4;
+    return localX >= btnX && localX <= btnX + CLOSE_BUTTON_SIZE && localY >= btnY && localY <= btnY + CLOSE_BUTTON_SIZE;
   }
 
   /** 根据拖拽角与当前鼠标位置更新字段的 x,y,width,height */
@@ -189,6 +214,11 @@
         document.addEventListener('mouseup', onResizeUp);
         return;
       }
+      if (getCloseButtonHit(overlay, pageNum, x, y)) {
+        e.preventDefault();
+        deleteField(selectedIndex);
+        return;
+      }
       dragStart = { x, y };
     });
 
@@ -196,11 +226,15 @@
       if (resizeState) return;
       if (!dragStart) {
         const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
-        const handle = getHandleAt(overlay, pageNum, x, y);
-        if (handle) {
-          overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+        if (getCloseButtonHit(overlay, pageNum, x, y)) {
+          overlay.style.cursor = 'pointer';
         } else {
-          overlay.style.cursor = 'crosshair';
+          const handle = getHandleAt(overlay, pageNum, x, y);
+          if (handle) {
+            overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+          } else {
+            overlay.style.cursor = 'crosshair';
+          }
         }
         return;
       }
