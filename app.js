@@ -159,6 +159,16 @@
     return localX >= btnX && localX <= btnX + CLOSE_BUTTON_SIZE && localY >= btnY && localY <= btnY + CLOSE_BUTTON_SIZE;
   }
 
+  /** 若 (localX, localY) 在某个字段矩形内（含边线），返回该字段在 fields 中的下标（取最上层）；否则返回 -1 */
+  function getFieldAtPoint(overlay, pageNum, localX, localY) {
+    for (var i = fields.length - 1; i >= 0; i--) {
+      var f = fields[i];
+      if (f.page !== pageNum) continue;
+      if (localX >= f.x && localX <= f.x + f.width && localY >= f.y && localY <= f.y + f.height) return i;
+    }
+    return -1;
+  }
+
   /** 若 (localX, localY) 在当前选中框的四条边上（不含四角、不含关闭按钮），返回 true */
   function getEdgeHit(overlay, pageNum, localX, localY) {
     if (selectedIndex < 0 || selectedIndex >= fields.length) return false;
@@ -280,6 +290,12 @@
         document.addEventListener('mouseup', onMoveUp);
         return;
       }
+      var fieldIdx = getFieldAtPoint(overlay, pageNum, x, y);
+      if (fieldIdx >= 0) {
+        e.preventDefault();
+        selectField(fieldIdx);
+        return;
+      }
       dragStart = { x, y };
     });
 
@@ -296,6 +312,8 @@
           const handle = getHandleAt(overlay, pageNum, x, y);
           if (handle) {
             overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+          } else if (getFieldAtPoint(overlay, pageNum, x, y) >= 0) {
+            overlay.style.cursor = 'pointer';
           } else {
             overlay.style.cursor = 'crosshair';
           }
