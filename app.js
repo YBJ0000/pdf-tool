@@ -22,8 +22,11 @@
   const HANDLE_SIZE = 8;
   const MIN_RECT_SIZE = 5;
   const CLOSE_BUTTON_SIZE = 18;
+  const EDGE_TOL = 6;
   /** 当前是否在拖拽调整大小：{ fieldIndex, corner, overlay, pageNum } */
   let resizeState = null;
+  /** 当前是否在拖拽移动框：{ fieldIndex, startLocalX, startLocalY, initialFieldX, initialFieldY, overlay, pageNum } */
+  let moveState = null;
 
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -43,6 +46,11 @@
       document.removeEventListener('mousemove', onResizeMove);
       document.removeEventListener('mouseup', onResizeUp);
       resizeState = null;
+    }
+    if (moveState) {
+      document.removeEventListener('mousemove', onMoveMove);
+      document.removeEventListener('mouseup', onMoveUp);
+      moveState = null;
     }
     renderFieldList();
     hideForm();
@@ -150,6 +158,20 @@
     return localX >= btnX && localX <= btnX + CLOSE_BUTTON_SIZE && localY >= btnY && localY <= btnY + CLOSE_BUTTON_SIZE;
   }
 
+  /** 若 (localX, localY) 在当前选中框的四条边上（不含四角、不含关闭按钮），返回 true */
+  function getEdgeHit(overlay, pageNum, localX, localY) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return false;
+    const f = fields[selectedIndex];
+    if (f.page !== pageNum) return false;
+    var hs = HANDLE_SIZE / 2;
+    var sel = f;
+    var top = localY >= sel.y - EDGE_TOL && localY <= sel.y + EDGE_TOL && localX >= sel.x + hs && localX <= sel.x + sel.width - hs;
+    var bottom = localY >= sel.y + sel.height - EDGE_TOL && localY <= sel.y + sel.height + EDGE_TOL && localX >= sel.x + hs && localX <= sel.x + sel.width - hs;
+    var left = localX >= sel.x - EDGE_TOL && localX <= sel.x + EDGE_TOL && localY >= sel.y + hs && localY <= sel.y + sel.height - hs;
+    var right = localX >= sel.x + sel.width - EDGE_TOL && localX <= sel.x + sel.width + EDGE_TOL && localY >= sel.y + hs && localY <= sel.y + sel.height - hs;
+    return top || bottom || left || right;
+  }
+
   /** 根据拖拽角与当前鼠标位置更新字段的 x,y,width,height */
   function applyResize(fieldIndex, corner, localX, localY) {
     const f = fields[fieldIndex];
@@ -193,6 +215,28 @@
     setStatus('已调整框大小');
   }
 
+  function onMoveMove(e) {
+    if (!moveState) return;
+    const { x, y } = getLocalCoords(moveState.overlay, e.clientX, e.clientY);
+    const f = fields[moveState.fieldIndex];
+    if (!f) return;
+    var dx = x - moveState.startLocalX;
+    var dy = y - moveState.startLocalY;
+    var newX = Math.max(0, Math.min(moveState.overlay.width - f.width, moveState.initialFieldX + dx));
+    var newY = Math.max(0, Math.min(moveState.overlay.height - f.height, moveState.initialFieldY + dy));
+    f.x = newX;
+    f.y = newY;
+    drawOverlay(moveState.overlay, moveState.pageNum, null, selectedIndex);
+  }
+
+  function onMoveUp(e) {
+    if (!moveState) return;
+    document.removeEventListener('mousemove', onMoveMove);
+    document.removeEventListener('mouseup', onMoveUp);
+    moveState = null;
+    setStatus('已移动框');
+  }
+
   function setupOverlay(wrapper, canvas, pageNum) {
     const overlay = document.createElement('canvas');
     overlay.className = 'pdf-overlay';
@@ -219,15 +263,34 @@
         deleteField(selectedIndex);
         return;
       }
+      if (getEdgeHit(overlay, pageNum, x, y)) {
+        e.preventDefault();
+        var f = fields[selectedIndex];
+        moveState = {
+          fieldIndex: selectedIndex,
+          startLocalX: x,
+          startLocalY: y,
+          initialFieldX: f.x,
+          initialFieldY: f.y,
+          overlay: overlay,
+          pageNum: pageNum,
+        };
+        document.addEventListener('mousemove', onMoveMove);
+        document.addEventListener('mouseup', onMoveUp);
+        return;
+      }
       dragStart = { x, y };
     });
 
     overlay.addEventListener('mousemove', function (e) {
       if (resizeState) return;
+      if (moveState) return;
       if (!dragStart) {
         const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
         if (getCloseButtonHit(overlay, pageNum, x, y)) {
           overlay.style.cursor = 'pointer';
+        } else if (getEdgeHit(overlay, pageNum, x, y)) {
+          overlay.style.cursor = 'move';
         } else {
           const handle = getHandleAt(overlay, pageNum, x, y);
           if (handle) {
@@ -250,6 +313,7 @@
 
     overlay.addEventListener('mouseup', function (e) {
       if (resizeState) return;
+      if (moveState) return;
       if (!dragStart) return;
       const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
       const x1 = Math.min(dragStart.x, x);
@@ -271,6 +335,7 @@
 
     overlay.addEventListener('mouseleave', function () {
       if (resizeState) return;
+      if (moveState) return;
       if (dragStart) {
         dragStart = null;
         drawOverlay(overlay, pageNum, null, selectedIndex);
