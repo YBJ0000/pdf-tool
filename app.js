@@ -11,6 +11,7 @@
   const fieldTypeSelect = document.getElementById('fieldType');
   const fieldDescriptionInput = document.getElementById('fieldDescription');
   const exportBtn = document.getElementById('exportBtn');
+  const importJsonInput = document.getElementById('importJsonInput');
 
   /** 已绘制的字段，每项为 { x, y, width, height, page, name, type, description } */
   const fields = [];
@@ -526,6 +527,48 @@
   }
 
   exportBtn.addEventListener('click', exportJson);
+
+  /** 导入已保存的 JSON，替换当前字段列表；若已加载 PDF 会重绘 overlay */
+  function importJson(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var payload = JSON.parse(reader.result);
+        if (!payload || !Array.isArray(payload.fields)) {
+          setStatus('导入失败：JSON 需包含 fields 数组');
+          return;
+        }
+        fields.length = 0;
+        payload.fields.forEach(function (item) {
+          fields.push({
+            x: Number(item.x) || 0,
+            y: Number(item.y) || 0,
+            width: Number(item.width) || 0,
+            height: Number(item.height) || 0,
+            page: Math.max(1, parseInt(item.page, 10) || 1),
+            name: typeof item.name === 'string' ? item.name : '',
+            type: typeof item.type === 'string' ? item.type : 'string',
+            description: typeof item.description === 'string' ? item.description : '',
+          });
+        });
+        selectedIndex = -1;
+        hideForm();
+        renderFieldList();
+        redrawAllOverlays();
+        setStatus('已导入 ' + fields.length + ' 个字段');
+      } catch (err) {
+        setStatus('导入失败：' + (err.message || String(err)));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  importJsonInput.addEventListener('change', function () {
+    var file = importJsonInput.files[0];
+    if (!file) return;
+    importJson(file);
+    importJsonInput.value = '';
+  });
 
   document.addEventListener('keydown', function (e) {
     if (selectedIndex < 0 || selectedIndex >= fields.length) return;
