@@ -481,7 +481,19 @@
     fieldDescriptionInput.value = f.description || '';
     showForm();
     var pageEl = pdfContainer.querySelector('.pdf-page-wrapper[data-page="' + String(f.page) + '"]');
-    if (pageEl) pageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (pageEl) {
+      var overlayItem = overlaysByPage.find(function (item) { return item.pageNum === f.page; });
+      if (overlayItem && overlayItem.overlay) {
+        var displayedHeight = pageEl.getBoundingClientRect().height;
+        var scaleY = displayedHeight / overlayItem.overlay.height;
+        var boxTopInContainer = pageEl.offsetTop + f.y * scaleY;
+        var targetScrollTop = boxTopInContainer - pdfContainer.clientHeight * 0.5;
+        var maxScroll = pdfContainer.scrollHeight - pdfContainer.clientHeight;
+        pdfContainer.scrollTo({ top: Math.max(0, Math.min(targetScrollTop, maxScroll)), behavior: 'smooth' });
+      } else {
+        pageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   }
 
   function syncFormToField() {
