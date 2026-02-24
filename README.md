@@ -13,9 +13,15 @@
 - **侧边栏固定**：字段列表与表单固定在视口右侧，PDF 区域单独滚动
 - **定位到框**：点击列表项时滚动到该框所在页，并将框滚入视口（框大致在视口上方 1/5 处）
 
+## 开发与构建
+
+- **开发**：`npm run dev`，浏览器打开 http://localhost:5173/
+- **构建**：`npm run build`，产物在 `dist/`，可用 `npm run preview` 预览
+- 也可用静态服务直接跑构建结果：`npx serve dist` 或 `python3 -m http.server 8080 --directory dist`
+
 ## 简短测试流程
 
-1. **启动**：在项目根目录执行 `npx serve .` 或 `python3 -m http.server 8080`，浏览器打开对应地址
+1. **启动**：执行 `npm run dev`（或按上节用 `dist` 预览），浏览器打开对应地址
 2. **加载**：点击「选择 PDF」选一个 PDF，确认多页正常显示；右侧字段列表始终可见（固定）
 3. **画框**：在某一页空白处拖拽画矩形，确认出现蓝色框且右侧列表多一项、表单自动弹出
 4. **编辑**：在表单填写 name/type/description，type 可选 checkbox 等，确认列表文案更新
