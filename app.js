@@ -11,6 +11,7 @@
   const fieldTypeSelect = document.getElementById('fieldType');
   const fieldDescriptionInput = document.getElementById('fieldDescription');
   const exportBtn = document.getElementById('exportBtn');
+  const importJsonInput = document.getElementById('importJsonInput');
 
   /** 已绘制的字段，每项为 { x, y, width, height, page, name, type, description } */
   const fields = [];
@@ -21,8 +22,12 @@
 
   const HANDLE_SIZE = 8;
   const MIN_RECT_SIZE = 5;
+  const CLOSE_BUTTON_SIZE = 18;
+  const EDGE_TOL = 6;
   /** 当前是否在拖拽调整大小：{ fieldIndex, corner, overlay, pageNum } */
   let resizeState = null;
+  /** 当前是否在拖拽移动框：{ fieldIndex, startLocalX, startLocalY, initialFieldX, initialFieldY, overlay, pageNum } */
+  let moveState = null;
 
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -42,6 +47,11 @@
       document.removeEventListener('mousemove', onResizeMove);
       document.removeEventListener('mouseup', onResizeUp);
       resizeState = null;
+    }
+    if (moveState) {
+      document.removeEventListener('mousemove', onMoveMove);
+      document.removeEventListener('mouseup', onMoveUp);
+      moveState = null;
     }
     renderFieldList();
     hideForm();
@@ -75,6 +85,20 @@
           ctx.fillRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
           ctx.strokeRect(cx - hs, cy - hs, HANDLE_SIZE, HANDLE_SIZE);
         });
+        var btnX = sel.x + sel.width - CLOSE_BUTTON_SIZE - 4;
+        var btnY = sel.y + 4;
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(btnX, btnY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.strokeRect(btnX, btnY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(btnX + 4, btnY + 4);
+        ctx.lineTo(btnX + CLOSE_BUTTON_SIZE - 4, btnY + CLOSE_BUTTON_SIZE - 4);
+        ctx.moveTo(btnX + CLOSE_BUTTON_SIZE - 4, btnY + 4);
+        ctx.lineTo(btnX + 4, btnY + CLOSE_BUTTON_SIZE - 4);
+        ctx.stroke();
       }
     }
 
@@ -125,6 +149,30 @@
     return null;
   }
 
+  /** 若 (localX, localY) 在当前选中框的关闭按钮内，返回 true */
+  function getCloseButtonHit(overlay, pageNum, localX, localY) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return false;
+    const f = fields[selectedIndex];
+    if (f.page !== pageNum) return false;
+    var btnX = f.x + f.width - CLOSE_BUTTON_SIZE - 4;
+    var btnY = f.y + 4;
+    return localX >= btnX && localX <= btnX + CLOSE_BUTTON_SIZE && localY >= btnY && localY <= btnY + CLOSE_BUTTON_SIZE;
+  }
+
+  /** 若 (localX, localY) 在当前选中框的四条边上（不含四角、不含关闭按钮），返回 true */
+  function getEdgeHit(overlay, pageNum, localX, localY) {
+    if (selectedIndex < 0 || selectedIndex >= fields.length) return false;
+    const f = fields[selectedIndex];
+    if (f.page !== pageNum) return false;
+    var hs = HANDLE_SIZE / 2;
+    var sel = f;
+    var top = localY >= sel.y - EDGE_TOL && localY <= sel.y + EDGE_TOL && localX >= sel.x + hs && localX <= sel.x + sel.width - hs;
+    var bottom = localY >= sel.y + sel.height - EDGE_TOL && localY <= sel.y + sel.height + EDGE_TOL && localX >= sel.x + hs && localX <= sel.x + sel.width - hs;
+    var left = localX >= sel.x - EDGE_TOL && localX <= sel.x + EDGE_TOL && localY >= sel.y + hs && localY <= sel.y + sel.height - hs;
+    var right = localX >= sel.x + sel.width - EDGE_TOL && localX <= sel.x + sel.width + EDGE_TOL && localY >= sel.y + hs && localY <= sel.y + sel.height - hs;
+    return top || bottom || left || right;
+  }
+
   /** 根据拖拽角与当前鼠标位置更新字段的 x,y,width,height */
   function applyResize(fieldIndex, corner, localX, localY) {
     const f = fields[fieldIndex];
@@ -168,11 +216,35 @@
     setStatus('已调整框大小');
   }
 
+  function onMoveMove(e) {
+    if (!moveState) return;
+    const { x, y } = getLocalCoords(moveState.overlay, e.clientX, e.clientY);
+    const f = fields[moveState.fieldIndex];
+    if (!f) return;
+    var dx = x - moveState.startLocalX;
+    var dy = y - moveState.startLocalY;
+    var newX = Math.max(0, Math.min(moveState.overlay.width - f.width, moveState.initialFieldX + dx));
+    var newY = Math.max(0, Math.min(moveState.overlay.height - f.height, moveState.initialFieldY + dy));
+    f.x = newX;
+    f.y = newY;
+    drawOverlay(moveState.overlay, moveState.pageNum, null, selectedIndex);
+  }
+
+  function onMoveUp(e) {
+    if (!moveState) return;
+    document.removeEventListener('mousemove', onMoveMove);
+    document.removeEventListener('mouseup', onMoveUp);
+    moveState = null;
+    setStatus('已移动框');
+  }
+
   function setupOverlay(wrapper, canvas, pageNum) {
     const overlay = document.createElement('canvas');
     overlay.className = 'pdf-overlay';
     overlay.width = canvas.width;
     overlay.height = canvas.height;
+    if (canvas.style.width) overlay.style.width = canvas.style.width;
+    if (canvas.style.height) overlay.style.height = canvas.style.height;
     overlay.dataset.page = String(pageNum);
 
     let dragStart = null;
@@ -187,18 +259,46 @@
         document.addEventListener('mouseup', onResizeUp);
         return;
       }
+      if (getCloseButtonHit(overlay, pageNum, x, y)) {
+        e.preventDefault();
+        deleteField(selectedIndex);
+        return;
+      }
+      if (getEdgeHit(overlay, pageNum, x, y)) {
+        e.preventDefault();
+        var f = fields[selectedIndex];
+        moveState = {
+          fieldIndex: selectedIndex,
+          startLocalX: x,
+          startLocalY: y,
+          initialFieldX: f.x,
+          initialFieldY: f.y,
+          overlay: overlay,
+          pageNum: pageNum,
+        };
+        document.addEventListener('mousemove', onMoveMove);
+        document.addEventListener('mouseup', onMoveUp);
+        return;
+      }
       dragStart = { x, y };
     });
 
     overlay.addEventListener('mousemove', function (e) {
       if (resizeState) return;
+      if (moveState) return;
       if (!dragStart) {
         const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
-        const handle = getHandleAt(overlay, pageNum, x, y);
-        if (handle) {
-          overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+        if (getCloseButtonHit(overlay, pageNum, x, y)) {
+          overlay.style.cursor = 'pointer';
+        } else if (getEdgeHit(overlay, pageNum, x, y)) {
+          overlay.style.cursor = 'move';
         } else {
-          overlay.style.cursor = 'crosshair';
+          const handle = getHandleAt(overlay, pageNum, x, y);
+          if (handle) {
+            overlay.style.cursor = (handle.corner === 'nw' || handle.corner === 'se') ? 'nwse-resize' : 'nesw-resize';
+          } else {
+            overlay.style.cursor = 'crosshair';
+          }
         }
         return;
       }
@@ -214,6 +314,7 @@
 
     overlay.addEventListener('mouseup', function (e) {
       if (resizeState) return;
+      if (moveState) return;
       if (!dragStart) return;
       const { x, y } = getLocalCoords(overlay, e.clientX, e.clientY);
       const x1 = Math.min(dragStart.x, x);
@@ -235,6 +336,7 @@
 
     overlay.addEventListener('mouseleave', function () {
       if (resizeState) return;
+      if (moveState) return;
       if (dragStart) {
         dragStart = null;
         drawOverlay(overlay, pageNum, null, selectedIndex);
@@ -256,9 +358,12 @@
       const numPages = pdf.numPages;
       setStatus('共 ' + numPages + ' 页，渲染中…');
 
+      const pixelRatio = window.devicePixelRatio || 1;
+      const scale = 1.5 * pixelRatio;
+
       for (let pageNum = 1; pageNum <= numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale: scale });
 
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper';
@@ -273,6 +378,8 @@
         const ctx = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+        canvas.style.width = viewport.width / pixelRatio + 'px';
+        canvas.style.height = viewport.height / pixelRatio + 'px';
 
         wrapper.appendChild(canvas);
         pdfContainer.appendChild(wrapper);
@@ -373,6 +480,20 @@
     fieldTypeSelect.value = f.type || 'string';
     fieldDescriptionInput.value = f.description || '';
     showForm();
+    var pageEl = pdfContainer.querySelector('.pdf-page-wrapper[data-page="' + String(f.page) + '"]');
+    if (pageEl) {
+      var overlayItem = overlaysByPage.find(function (item) { return item.pageNum === f.page; });
+      if (overlayItem && overlayItem.overlay) {
+        var displayedHeight = pageEl.getBoundingClientRect().height;
+        var scaleY = displayedHeight / overlayItem.overlay.height;
+        var boxTopInContainer = pageEl.offsetTop + f.y * scaleY;
+        var targetScrollTop = boxTopInContainer - pdfContainer.clientHeight * 0.5;
+        var maxScroll = pdfContainer.scrollHeight - pdfContainer.clientHeight;
+        pdfContainer.scrollTo({ top: Math.max(0, Math.min(targetScrollTop, maxScroll)), behavior: 'smooth' });
+      } else {
+        pageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   }
 
   function syncFormToField() {
@@ -418,6 +539,48 @@
   }
 
   exportBtn.addEventListener('click', exportJson);
+
+  /** 导入已保存的 JSON，替换当前字段列表；若已加载 PDF 会重绘 overlay */
+  function importJson(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var payload = JSON.parse(reader.result);
+        if (!payload || !Array.isArray(payload.fields)) {
+          setStatus('导入失败：JSON 需包含 fields 数组');
+          return;
+        }
+        fields.length = 0;
+        payload.fields.forEach(function (item) {
+          fields.push({
+            x: Number(item.x) || 0,
+            y: Number(item.y) || 0,
+            width: Number(item.width) || 0,
+            height: Number(item.height) || 0,
+            page: Math.max(1, parseInt(item.page, 10) || 1),
+            name: typeof item.name === 'string' ? item.name : '',
+            type: typeof item.type === 'string' ? item.type : 'string',
+            description: typeof item.description === 'string' ? item.description : '',
+          });
+        });
+        selectedIndex = -1;
+        hideForm();
+        renderFieldList();
+        redrawAllOverlays();
+        setStatus('已导入 ' + fields.length + ' 个字段');
+      } catch (err) {
+        setStatus('导入失败：' + (err.message || String(err)));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  importJsonInput.addEventListener('change', function () {
+    var file = importJsonInput.files[0];
+    if (!file) return;
+    importJson(file);
+    importJsonInput.value = '';
+  });
 
   document.addEventListener('keydown', function (e) {
     if (selectedIndex < 0 || selectedIndex >= fields.length) return;
