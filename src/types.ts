@@ -49,8 +49,9 @@ export interface MoveState {
   pageNum: number;
 }
 
-/** 导出的 JSON 结构（mission 格式） */
+/** 导出的 JSON 结构（mission 格式）。scale 为 viewport 渲染时的 scale（1 PDF point = scale 像素），后端用于将 x,y,width,height 从像素换算为 PDF 点 */
 export interface FieldsExport {
+  scale?: number;
   fields: Array<{
     name: string;
     type: string;

@@ -6,9 +6,10 @@ function toFieldType(s: string): FieldType {
   return FIELD_TYPES.includes(s as FieldType) ? (s as FieldType) : 'string';
 }
 
-/** 按 mission 格式导出 JSON 并下载 */
+/** 按 mission 格式导出 JSON 并下载（含 scale 供后端 overlay 换算 viewport 像素 → PDF 点） */
 export function exportJson(setStatus: (t: string) => void): void {
   const payload: FieldsExport = {
+    scale: state.pdfScale,
     fields: state.fields.map((f) => ({
       name: f.name ?? '',
       type: f.type ?? 'string',
