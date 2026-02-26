@@ -99,6 +99,7 @@ export async function renderPdf(
 
     const pixelRatio = window.devicePixelRatio || 1;
     const scale = 1.5 * pixelRatio;
+    state.pdfScale = scale;
 
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
