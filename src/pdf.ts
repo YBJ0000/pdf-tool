@@ -12,11 +12,16 @@ export interface RenderPdfDeps {
   selectField: (index: number) => void;
 }
 
-/** PDF AcroForm 控件类型到工具 Field 类型的映射 */
-function mapPdfFieldType(pdfType: string | undefined): FieldType {
+/** PDF AcroForm 控件类型到工具 Field 类型的映射；对 Tx 按字段名识别 date（date/dob/birthday） */
+function mapPdfFieldType(pdfType: string | undefined, fieldName: string): FieldType {
   switch (pdfType) {
-    case 'Tx':
+    case 'Tx': {
+      const lower = fieldName.toLowerCase();
+      if (/\bdate\b/.test(lower) || /\bdob\b/.test(lower) || /\bbirthday\b/.test(lower)) {
+        return 'date';
+      }
       return 'string';
+    }
     case 'Btn':
       return 'checkbox';
     case 'Ch':
@@ -56,7 +61,7 @@ async function detectAcroFormFields(
         height,
         page: pageNum,
         name: name || `field_${state.fields.length + 1}`,
-        type: mapPdfFieldType(ann.fieldType),
+        type: mapPdfFieldType(ann.fieldType, name),
         description: '',
       });
       count++;
