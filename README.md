@@ -8,7 +8,7 @@
 - **调整框大小**：选中字段后框变黄并显示四角手柄，拖拽手柄改大小
 - **移动框**：鼠标在选中框的四条边上时光标为 move，拖拽可移动框，限制在本页内
 - **删除字段**：列表项右侧 ×、选中框右上角红色 ×、或选中后按 Delete/Backspace
-- **导出 JSON**：按 mission 格式导出 `fields.json`（name, type, description, x, y, width, height, page）
+- **导出 JSON**：按 mission 格式导出 `fields.json`（name, type, description, x, y, width, height, page）。**坐标说明**：x、y、width、height 为 **viewport 像素**（canvas 坐标），渲染时 `scale = 1.5 * devicePixelRatio`，即 1 PDF point = scale 像素；导出中包含 `scale` 字段，后端需用其将像素换算为 PDF 点再填充，否则会把像素当点用导致位置错乱
 - **导入 JSON**：选择已保存的 `fields.json` 可继续编辑（替换当前字段列表）
 - **侧边栏固定**：字段列表与表单固定在视口右侧，PDF 区域单独滚动
 - **定位到框**：点击列表项时滚动到该框所在页，并将框滚入视口（框大致在视口上方 1/5 处）
