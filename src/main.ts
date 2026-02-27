@@ -24,6 +24,7 @@ const fieldFormEl = document.getElementById('fieldForm') as HTMLElement;
 const fieldNameInput = document.getElementById('fieldName') as HTMLInputElement;
 const fieldTypeSelect = document.getElementById('fieldType') as HTMLSelectElement;
 const fieldDescriptionInput = document.getElementById('fieldDescription') as HTMLTextAreaElement;
+const fieldVerticalAlignSelect = document.getElementById('fieldVerticalAlign') as HTMLSelectElement;
 const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
 const importJsonInput = document.getElementById('importJsonInput') as HTMLInputElement;
 const exportModal = document.getElementById('exportModal') as HTMLElement;
@@ -41,7 +42,7 @@ function setStatus(text: string): void {
 }
 
 const hideFormBound = (): void =>
-  hideForm(fieldFormEl, fieldNameInput, fieldTypeSelect, fieldDescriptionInput);
+  hideForm(fieldFormEl, fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect);
 const showFormBound = (): void => showForm(fieldFormEl);
 
 let selectFieldBound: (index: number) => void;
@@ -61,6 +62,7 @@ const selectFieldDeps = {
   fieldNameInput,
   fieldTypeSelect,
   fieldDescriptionInput,
+  fieldVerticalAlignSelect,
   showForm: showFormBound,
   hideForm: hideFormBound,
   renderFieldList: doRenderFieldList,
@@ -141,19 +143,22 @@ importJsonInput.addEventListener('change', () => {
 });
 
 fieldNameInput.addEventListener('input', () =>
-  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, doRenderFieldList)
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
 );
 fieldNameInput.addEventListener('change', () =>
-  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, doRenderFieldList)
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
 );
 fieldTypeSelect.addEventListener('change', () =>
-  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, doRenderFieldList)
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
 );
 fieldDescriptionInput.addEventListener('input', () =>
-  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, doRenderFieldList)
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
 );
 fieldDescriptionInput.addEventListener('change', () =>
-  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, doRenderFieldList)
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
+);
+fieldVerticalAlignSelect.addEventListener('change', () =>
+  syncFormToField(fieldNameInput, fieldTypeSelect, fieldDescriptionInput, fieldVerticalAlignSelect, doRenderFieldList)
 );
 
 document.addEventListener('keydown', (e) => {

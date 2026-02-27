@@ -1,9 +1,14 @@
 import { state, defaultExportOptions } from './state.ts';
-import type { FieldsExport, FieldType, ExportOptions } from './types.ts';
+import type { FieldsExport, FieldType, ExportOptions, VerticalAlign } from './types.ts';
 
 const FIELD_TYPES: FieldType[] = ['string', 'number', 'date', 'boolean', 'checkbox'];
 function toFieldType(s: string): FieldType {
   return FIELD_TYPES.includes(s as FieldType) ? (s as FieldType) : 'string';
+}
+
+const VERTICAL_ALIGNS: VerticalAlign[] = ['top', 'middle', 'bottom'];
+function toVerticalAlign(s: string): VerticalAlign {
+  return VERTICAL_ALIGNS.includes(s as VerticalAlign) ? (s as VerticalAlign) : 'middle';
 }
 
 /** 按 mission 格式导出 JSON 并下载（含 scale、checkboxSymbol、fontSize、fontColor、paddingX、paddingY、fields） */
@@ -24,6 +29,7 @@ export function exportJson(setStatus: (t: string) => void, options: ExportOption
       width: f.width,
       height: f.height,
       page: f.page,
+      verticalAlign: f.verticalAlign ?? 'middle',
     })),
   };
   const json = JSON.stringify(payload, null, 2);
@@ -64,6 +70,7 @@ export function importJson(
           name: typeof item.name === 'string' ? item.name : '',
           type: toFieldType(typeof item.type === 'string' ? item.type : 'string'),
           description: typeof item.description === 'string' ? item.description : '',
+          verticalAlign: toVerticalAlign(typeof item.verticalAlign === 'string' ? item.verticalAlign : 'middle'),
         });
       }
       if (data.checkboxSymbol !== undefined || data.fontSize !== undefined || data.fontColor !== undefined || data.paddingX !== undefined || data.paddingY !== undefined) {

@@ -63,6 +63,7 @@ async function detectAcroFormFields(
         name: name || `field_${state.fields.length + 1}`,
         type: mapPdfFieldType(ann.fieldType, name),
         description: '',
+        verticalAlign: 'middle',
       });
       count++;
     }
@@ -151,6 +152,7 @@ export async function renderPdf(
             name: '',
             type: 'string',
             description: '',
+            verticalAlign: 'middle',
           });
           setStatus('已添加框，共 ' + state.fields.length + ' 个');
           renderFieldList();

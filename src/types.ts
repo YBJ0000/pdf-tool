@@ -1,6 +1,9 @@
 /** 字段类型（与 mission 一致） */
 export type FieldType = 'string' | 'number' | 'date' | 'boolean' | 'checkbox';
 
+/** 字段内垂直对齐（与 name、type、page 同级别） */
+export type VerticalAlign = 'top' | 'middle' | 'bottom';
+
 /** 单条字段：画框坐标 + 表单信息 */
 export interface Field {
   x: number;
@@ -11,6 +14,7 @@ export interface Field {
   name: string;
   type: FieldType;
   description: string;
+  verticalAlign: VerticalAlign;
 }
 
 /** 拖拽绘制中的临时矩形 */
@@ -75,5 +79,6 @@ export interface FieldsExport {
     width: number;
     height: number;
     page: number;
+    verticalAlign?: VerticalAlign;
   }>;
 }
