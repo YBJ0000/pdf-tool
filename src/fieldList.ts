@@ -60,6 +60,7 @@ export interface SelectFieldDeps {
   fieldNameInput: HTMLInputElement;
   fieldTypeSelect: HTMLSelectElement;
   fieldDescriptionInput: HTMLTextAreaElement;
+  fieldVerticalAlignSelect: HTMLSelectElement;
   showForm: () => void;
   hideForm: () => void;
   renderFieldList: () => void;
@@ -78,6 +79,7 @@ export function selectField(index: number, deps: SelectFieldDeps): void {
   deps.fieldNameInput.value = f.name;
   deps.fieldTypeSelect.value = f.type;
   deps.fieldDescriptionInput.value = f.description;
+  deps.fieldVerticalAlignSelect.value = f.verticalAlign ?? 'middle';
   deps.showForm();
   const pageEl = deps.pdfContainer.querySelector(
     '.pdf-page-wrapper[data-page="' + String(f.page) + '"]'
