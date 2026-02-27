@@ -1,15 +1,20 @@
-import { state } from './state.ts';
-import type { FieldsExport, FieldType } from './types.ts';
+import { state, defaultExportOptions } from './state.ts';
+import type { FieldsExport, FieldType, ExportOptions } from './types.ts';
 
 const FIELD_TYPES: FieldType[] = ['string', 'number', 'date', 'boolean', 'checkbox'];
 function toFieldType(s: string): FieldType {
   return FIELD_TYPES.includes(s as FieldType) ? (s as FieldType) : 'string';
 }
 
-/** 按 mission 格式导出 JSON 并下载（含 scale 供后端 overlay 换算 viewport 像素 → PDF 点） */
-export function exportJson(setStatus: (t: string) => void): void {
+/** 按 mission 格式导出 JSON 并下载（含 scale、checkboxSymbol、fontSize、fontColor、paddingX、paddingY、fields） */
+export function exportJson(setStatus: (t: string) => void, options: ExportOptions): void {
   const payload: FieldsExport = {
     scale: state.pdfScale,
+    checkboxSymbol: options.checkboxSymbol,
+    fontSize: options.fontSize,
+    fontColor: options.fontColor,
+    paddingX: options.paddingX,
+    paddingY: options.paddingY,
     fields: state.fields.map((f) => ({
       name: f.name ?? '',
       type: f.type ?? 'string',
@@ -46,7 +51,8 @@ export function importJson(
         setStatus('导入失败：JSON 需包含 fields 数组');
         return;
       }
-      const fields = (payload as FieldsExport).fields;
+      const data = payload as FieldsExport;
+      const fields = data.fields;
       state.fields.length = 0;
       for (const item of fields) {
         state.fields.push({
@@ -59,6 +65,15 @@ export function importJson(
           type: toFieldType(typeof item.type === 'string' ? item.type : 'string'),
           description: typeof item.description === 'string' ? item.description : '',
         });
+      }
+      if (data.checkboxSymbol !== undefined || data.fontSize !== undefined || data.fontColor !== undefined || data.paddingX !== undefined || data.paddingY !== undefined) {
+        state.exportOptions = {
+          checkboxSymbol: typeof data.checkboxSymbol === 'string' ? data.checkboxSymbol : defaultExportOptions.checkboxSymbol,
+          fontSize: typeof data.fontSize === 'number' && data.fontSize >= 0 ? data.fontSize : defaultExportOptions.fontSize,
+          fontColor: typeof data.fontColor === 'string' ? data.fontColor : defaultExportOptions.fontColor,
+          paddingX: typeof data.paddingX === 'number' && data.paddingX >= 0 ? data.paddingX : defaultExportOptions.paddingX,
+          paddingY: typeof data.paddingY === 'number' && data.paddingY >= 0 ? data.paddingY : defaultExportOptions.paddingY,
+        };
       }
       state.selectedIndex = -1;
       onLoaded(state.fields.length);

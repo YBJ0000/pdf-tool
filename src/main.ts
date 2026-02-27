@@ -5,7 +5,8 @@ import { renderFieldList, deleteField, selectField } from './fieldList.ts';
 import { showForm, hideForm, syncFormToField } from './form.ts';
 import { exportJson, importJson } from './exportImport.ts';
 import { redrawAllOverlays } from './overlay.ts';
-import { state } from './state.ts';
+import { state, defaultExportOptions } from './state.ts';
+import type { ExportOptions } from './types.ts';
 
 // PDF.js worker
 if (typeof pdfjsLib.GlobalWorkerOptions !== 'undefined') {
@@ -25,6 +26,15 @@ const fieldTypeSelect = document.getElementById('fieldType') as HTMLSelectElemen
 const fieldDescriptionInput = document.getElementById('fieldDescription') as HTMLTextAreaElement;
 const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
 const importJsonInput = document.getElementById('importJsonInput') as HTMLInputElement;
+const exportModal = document.getElementById('exportModal') as HTMLElement;
+const exportModalBackdrop = document.getElementById('exportModalBackdrop') as HTMLElement;
+const exportCheckboxSymbol = document.getElementById('exportCheckboxSymbol') as HTMLInputElement;
+const exportFontSize = document.getElementById('exportFontSize') as HTMLInputElement;
+const exportFontColor = document.getElementById('exportFontColor') as HTMLInputElement;
+const exportPaddingX = document.getElementById('exportPaddingX') as HTMLInputElement;
+const exportPaddingY = document.getElementById('exportPaddingY') as HTMLInputElement;
+const exportModalCancel = document.getElementById('exportModalCancel') as HTMLButtonElement;
+const exportModalConfirm = document.getElementById('exportModalConfirm') as HTMLButtonElement;
 
 function setStatus(text: string): void {
   statusEl.textContent = text;
@@ -79,7 +89,45 @@ fileInput.addEventListener('change', () => {
   reader.readAsArrayBuffer(file);
 });
 
-exportBtn.addEventListener('click', () => exportJson(setStatus));
+function openExportModal(): void {
+  exportCheckboxSymbol.value = state.exportOptions.checkboxSymbol;
+  exportFontSize.value = String(state.exportOptions.fontSize);
+  exportFontColor.value = state.exportOptions.fontColor;
+  exportPaddingX.value = String(state.exportOptions.paddingX);
+  exportPaddingY.value = String(state.exportOptions.paddingY);
+  exportModal.classList.remove('hidden');
+  exportModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeExportModal(): void {
+  exportModal.classList.add('hidden');
+  exportModal.setAttribute('aria-hidden', 'true');
+}
+
+function getExportOptionsFromForm(): ExportOptions {
+  const fontSize = parseInt(exportFontSize.value, 10);
+  const paddingX = parseInt(exportPaddingX.value, 10);
+  const paddingY = parseInt(exportPaddingY.value, 10);
+  return {
+    checkboxSymbol: exportCheckboxSymbol.value.trim(),
+    fontSize: Number.isFinite(fontSize) && fontSize >= 1 ? fontSize : defaultExportOptions.fontSize,
+    fontColor: exportFontColor.value.trim() || defaultExportOptions.fontColor,
+    paddingX: Number.isFinite(paddingX) && paddingX >= 0 ? paddingX : defaultExportOptions.paddingX,
+    paddingY: Number.isFinite(paddingY) && paddingY >= 0 ? paddingY : defaultExportOptions.paddingY,
+  };
+}
+
+exportBtn.addEventListener('click', () => openExportModal());
+
+exportModalCancel.addEventListener('click', () => closeExportModal());
+exportModalBackdrop.addEventListener('click', () => closeExportModal());
+
+exportModalConfirm.addEventListener('click', () => {
+  const options = getExportOptionsFromForm();
+  state.exportOptions = options;
+  exportJson(setStatus, options);
+  closeExportModal();
+});
 
 importJsonInput.addEventListener('change', () => {
   const file = importJsonInput.files?.[0];

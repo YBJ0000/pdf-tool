@@ -19,6 +19,30 @@
     <span id="status" class="status"></span>
   </header>
 
+  <!-- 导出配置弹窗 -->
+  <div id="exportModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" id="exportModalBackdrop"></div>
+    <div class="modal-dialog">
+      <h3 class="modal-title">导出配置</h3>
+      <div class="modal-body">
+        <label class="form-label">checkboxSymbol（复选框符号图片路径）</label>
+        <input type="text" id="exportCheckboxSymbol" class="form-input" placeholder="默认空字符串" />
+        <label class="form-label">fontSize</label>
+        <input type="number" id="exportFontSize" class="form-input" min="1" step="1" />
+        <label class="form-label">fontColor</label>
+        <input type="text" id="exportFontColor" class="form-input" placeholder="#000000" />
+        <label class="form-label">paddingX（字符串字段文字与边框水平内边距）</label>
+        <input type="number" id="exportPaddingX" class="form-input" min="0" step="1" />
+        <label class="form-label">paddingY（字符串字段文字与边框垂直内边距）</label>
+        <input type="number" id="exportPaddingY" class="form-input" min="0" step="1" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="exportModalCancel" class="btn btn-cancel">取消导出</button>
+        <button type="button" id="exportModalConfirm" class="btn btn-confirm">确认导出</button>
+      </div>
+    </div>
+  </div>
+
   <main class="main">
     <div id="pdfContainer" class="pdf-container"></div>
     <aside id="sidebar" class="sidebar">
