@@ -15,13 +15,13 @@ export function renderFieldList(
 
     const label = document.createElement('span');
     label.className = 'field-list-label';
-    label.textContent = '字段 ' + (i + 1) + (f.name ? ' · ' + f.name : '') + ' (第 ' + f.page + ' 页)';
+    label.textContent = 'Field ' + (i + 1) + (f.name ? ' · ' + f.name : '') + ' (Page ' + f.page + ')';
     label.addEventListener('click', () => onSelectField(i));
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'field-delete';
-    delBtn.title = '删除';
+    delBtn.title = 'Delete';
     delBtn.textContent = '×';
     delBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -52,7 +52,7 @@ export function deleteField(index: number, deps: DeleteFieldDeps): void {
   }
   deps.renderFieldList();
   redrawAllOverlays();
-  deps.setStatus('已删除，剩余 ' + state.fields.length + ' 个字段');
+  deps.setStatus('Deleted, ' + state.fields.length + ' field(s) remaining');
 }
 
 export interface SelectFieldDeps {

@@ -1,35 +1,34 @@
-# PDF 字段标注工具
+# PDF Field Annotation Tool
 
-## 实现功能
+## Features
 
-- **加载 PDF**：选择本地 PDF，多页逐页渲染显示
-- **画框**：在任意页拖拽画出矩形，满足最小尺寸后新增字段
-- **编辑字段**：右侧列表点选字段，在表单中填写/修改 name、type、description（type 含 string / number / date / boolean / checkbox）
-- **调整框大小**：选中字段后框变黄并显示四角手柄，拖拽手柄改大小
-- **移动框**：鼠标在选中框的四条边上时光标为 move，拖拽可移动框，限制在本页内
-- **删除字段**：列表项右侧 ×、选中框右上角红色 ×、或选中后按 Delete/Backspace
-- **导出 JSON**：按 mission 格式导出 `fields.json`（name, type, description, x, y, width, height, page）。**坐标说明**：x、y、width、height 为 **viewport 像素**（canvas 坐标），渲染时 `scale = 1.5 * devicePixelRatio`，即 1 PDF point = scale 像素；导出中包含 `scale` 字段，后端需用其将像素换算为 PDF 点再填充，否则会把像素当点用导致位置错乱
-- **导入 JSON**：选择已保存的 `fields.json` 可继续编辑（替换当前字段列表）
-- **侧边栏固定**：字段列表与表单固定在视口右侧，PDF 区域单独滚动
-- **定位到框**：点击列表项时滚动到该框所在页，并将框滚入视口（框大致在视口上方 1/5 处）
-- **自动检测 AcroForm 表单字段**：加载包含 AcroForm 的 PDF 时，自动识别页面上的表单控件（输入框、复选框等）并生成对应字段框，可直接编辑、调整或导出
+- **Load PDF**: Select a local PDF; multiple pages are rendered one by one
+- **Draw boxes**: Drag on any page to draw a rectangle; a new field is added when minimum size is met
+- **Edit fields**: Click a field in the right-hand list and edit name, type, description in the form (type: string / number / date / boolean / checkbox)
+- **Resize boxes**: Selected field shows a yellow box with corner handles; drag handles to resize
+- **Move boxes**: When the cursor is on an edge of the selected box it shows move; drag to move (constrained to the current page)
+- **Delete fields**: Use the × on the list item, the red × on the selected box, or press Delete/Backspace when selected
+- **Export JSON**: Export `fields.json` in mission format (name, type, description, x, y, width, height, page). **Coordinates**: x, y, width, height are **viewport pixels** (canvas coordinates). Render scale is `scale = 1.5 * devicePixelRatio` (1 PDF point = scale pixels). Export includes a `scale` field; the backend must use it to convert pixels to PDF points before filling, or positions will be wrong
+- **Import JSON**: Choose a saved `fields.json` to continue editing (replaces the current field list)
+- **Fixed sidebar**: Field list and form are fixed on the right; PDF area scrolls independently
+- **Scroll to box**: Clicking a list item scrolls the PDF to that page and brings the box into view (roughly upper fifth of the viewport)
+- **AcroForm auto-detect**: When loading a PDF with AcroForm, form controls (inputs, checkboxes, etc.) are detected and corresponding field boxes are created; you can edit, resize, or export them
 
-## 开发与构建
+## Development & Build
 
-- **开发**：`npm run dev`，浏览器打开 http://localhost:5173/
-- **构建**：`npm run build`，产物在 `dist/`，可用 `npm run preview` 预览
-- 也可用静态服务直接跑构建结果：`npx serve dist` 或 `python3 -m http.server 8080 --directory dist`
+- **Dev**: `npm run dev`, then open http://localhost:5173/
+- **Build**: `npm run build`; output in `dist/`. Use `npm run preview` to preview
+- Or serve the build: `npx serve dist` or `python3 -m http.server 8080 --directory dist`
 
-## 简短测试流程
+## Quick Test Flow
 
-1. **启动**：执行 `npm run dev`（或按上节用 `dist` 预览），浏览器打开对应地址
-2. **加载**：点击「选择 PDF」选一个 PDF，确认多页正常显示；右侧字段列表始终可见（固定）
-3. **画框**：在某一页空白处拖拽画矩形，确认出现蓝色框且右侧列表多一项、表单自动弹出
-4. **编辑**：在表单填写 name/type/description，type 可选 checkbox 等，确认列表文案更新
-5. **选中与调整**：点列表另一项，确认对应框变黄、出现四角手柄与右上角红色 ×；拖拽某角改变大小；在框边上光标为 move 时拖拽可移动框（不拖出本页）
-6. **删除**：点列表项右侧 ×、或选中框后点框上红色 ×、或选中后按 Delete，确认框与列表项同步消失
-7. **定位**：在列表中点选某一项，确认 PDF 区域滚动且该框进入视口
-8. **导出**：点击「导出 JSON」，确认下载 `fields.json` 且内容包含当前所有字段及坐标
-9. **导入**：点击「导入 JSON」选择刚导出的文件，确认列表与框恢复，可继续编辑后再次导出
-10. **AcroForm 检测**：用带可填写表单的 PDF（含 AcroForm 的 PDF）加载，确认加载完成后自动出现与表单控件对应的字段框，可点选编辑、调整、导出；无表单的 PDF 加载后仅显示「已加载 N 页，可拖拽画矩形」，不报错
-
+1. **Start**: Run `npm run dev` (or preview `dist` as above) and open the URL
+2. **Load**: Click "Select PDF", pick a PDF; confirm multiple pages render; field list stays visible on the right
+3. **Draw**: Drag on a blank area of a page to draw a rectangle; confirm a blue box appears and the list gains an item with the form open
+4. **Edit**: Fill name/type/description in the form (e.g. type checkbox); confirm list text updates
+5. **Select & adjust**: Click another list item; confirm the box turns yellow with corner handles and a red ×; drag a corner to resize; drag on an edge (when cursor is move) to move the box (within the page)
+6. **Delete**: Use × on the list item, or the red × on the box, or Delete when selected; confirm box and list item are removed
+7. **Scroll to box**: Click a list item and confirm the PDF scrolls so that box is in view
+8. **Export**: Click "Export JSON"; confirm `fields.json` downloads with all current fields and coordinates
+9. **Import**: Click "Import JSON" and choose the exported file; confirm list and boxes are restored and editable
+10. **AcroForm**: Load a PDF with fillable form (AcroForm); confirm field boxes appear for form controls; without AcroForm, you should see "Loaded N page(s). Drag to draw rectangles." and no errors
