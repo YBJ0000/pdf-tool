@@ -11,7 +11,7 @@ function toVerticalAlign(s: string): VerticalAlign {
   return VERTICAL_ALIGNS.includes(s as VerticalAlign) ? (s as VerticalAlign) : 'middle';
 }
 
-/** 按 mission 格式导出 JSON 并下载（含 scale、checkboxSymbol、fontSize、fontColor、paddingX、paddingY、fields） */
+/** Export JSON in mission format and download (scale, checkboxSymbol, fontSize, fontColor, paddingX, paddingY, fields) */
 export function exportJson(setStatus: (t: string) => void, options: ExportOptions): void {
   const payload: FieldsExport = {
     scale: state.pdfScale,
@@ -40,10 +40,10 @@ export function exportJson(setStatus: (t: string) => void, options: ExportOption
   a.download = 'fields.json';
   a.click();
   URL.revokeObjectURL(url);
-  setStatus('已导出 ' + state.fields.length + ' 个字段');
+  setStatus('Exported ' + state.fields.length + ' field(s)');
 }
 
-/** 导入已保存的 JSON，替换当前字段列表；若已加载 PDF 会重绘 overlay */
+/** Import saved JSON, replace current field list; redraw overlay if PDF is loaded */
 export function importJson(
   file: File,
   setStatus: (t: string) => void,
@@ -54,7 +54,7 @@ export function importJson(
     try {
       const payload = JSON.parse(reader.result as string) as FieldsExport | unknown;
       if (!payload || !Array.isArray((payload as FieldsExport).fields)) {
-        setStatus('导入失败：JSON 需包含 fields 数组');
+        setStatus('Import failed: JSON must contain a fields array');
         return;
       }
       const data = payload as FieldsExport;
@@ -84,9 +84,9 @@ export function importJson(
       }
       state.selectedIndex = -1;
       onLoaded(state.fields.length);
-      setStatus('已导入 ' + state.fields.length + ' 个字段');
+      setStatus('Imported ' + state.fields.length + ' field(s)');
     } catch (err) {
-      setStatus('导入失败：' + (err instanceof Error ? err.message : String(err)));
+      setStatus('Import failed: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
   reader.readAsText(file);

@@ -12,7 +12,7 @@ export interface RenderPdfDeps {
   selectField: (index: number) => void;
 }
 
-/** PDF AcroForm 控件类型到工具 Field 类型的映射；对 Tx 按字段名识别 date（date/dob/birthday） */
+/** Map PDF AcroForm widget types to tool Field types; for Tx, detect date by field name (date/dob/birthday) */
 function mapPdfFieldType(pdfType: string | undefined, fieldName: string): FieldType {
   switch (pdfType) {
     case 'Tx': {
@@ -31,7 +31,7 @@ function mapPdfFieldType(pdfType: string | undefined, fieldName: string): FieldT
   }
 }
 
-/** 从已加载的 PDF 中检测 AcroForm 表单字段（Widget 注解），写入 state.fields 并刷新列表与 overlay */
+/** Detect AcroForm form fields (Widget annotations) from loaded PDF, write to state.fields and refresh list and overlay */
 async function detectAcroFormFields(
   pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>,
   scale: number,
@@ -95,13 +95,13 @@ export async function renderPdf(
 ): Promise<void> {
   const { pdfContainer, setStatus, renderFieldList, hideForm, deleteField, selectField } = deps;
   clearPdf(pdfContainer, { renderFieldList, hideForm });
-  setStatus('加载中…');
+  setStatus('Loading…');
 
   try {
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
-    setStatus('共 ' + numPages + ' 页，渲染中…');
+    setStatus(numPages + ' page(s), rendering…');
 
     const pixelRatio = window.devicePixelRatio || 1;
     const scale = 1.5 * pixelRatio;
@@ -117,7 +117,7 @@ export async function renderPdf(
 
       const label = document.createElement('span');
       label.className = 'page-label';
-      label.textContent = '第 ' + pageNum + ' 页';
+      label.textContent = 'Page ' + pageNum;
       wrapper.appendChild(label);
 
       const canvas = document.createElement('canvas');
@@ -154,12 +154,12 @@ export async function renderPdf(
             description: '',
             verticalAlign: 'middle',
           });
-          setStatus('已添加框，共 ' + state.fields.length + ' 个');
+          setStatus('Box added, ' + state.fields.length + ' total');
           renderFieldList();
           selectField(state.fields.length - 1);
         },
-        () => setStatus('已调整框大小'),
-        () => setStatus('已移动框')
+        () => setStatus('Box resized'),
+        () => setStatus('Box moved')
       );
     }
 
@@ -168,12 +168,12 @@ export async function renderPdf(
       setStatus,
     });
     if (detected > 0) {
-      setStatus('已加载 ' + numPages + ' 页，已自动检测 ' + detected + ' 个表单字段，可拖拽画矩形');
+      setStatus('Loaded ' + numPages + ' page(s), auto-detected ' + detected + ' form field(s). Drag to draw rectangles.');
     } else {
-      setStatus('已加载 ' + numPages + ' 页，可拖拽画矩形');
+      setStatus('Loaded ' + numPages + ' page(s). Drag to draw rectangles.');
     }
   } catch (err) {
     console.error(err);
-    setStatus('加载失败: ' + (err instanceof Error ? err.message : String(err)));
+    setStatus('Load failed: ' + (err instanceof Error ? err.message : String(err)));
   }
 }

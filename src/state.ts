@@ -1,6 +1,6 @@
 import type { Field, OverlayItem, ResizeState, MoveState, ExportOptions } from './types.ts';
 
-/** 导出配置默认值（与 scale、fields 同级别），用于导出弹窗预填与导入后回填 */
+/** Default export options (same level as scale, fields); used to prefill export modal and after import */
 export const defaultExportOptions: ExportOptions = {
   checkboxSymbol: '',
   fontSize: 12,
@@ -9,7 +9,7 @@ export const defaultExportOptions: ExportOptions = {
   paddingY: 0,
 };
 
-/** 全局可变状态：字段列表、选中下标、每页 overlay、拖拽状态；pdfScale 为渲染时的 viewport scale（1 PDF point = pdfScale 像素），导出时供后端换算坐标 */
+/** Global mutable state: field list, selected index, per-page overlays, drag state; pdfScale is viewport scale at render (1 PDF point = pdfScale pixels), used by backend to convert coordinates on export */
 export const state = {
   fields: [] as Field[],
   selectedIndex: -1,
@@ -17,6 +17,6 @@ export const state = {
   resizeState: null as ResizeState | null,
   moveState: null as MoveState | null,
   pdfScale: 1 as number,
-  /** 上次导出/导入使用的配置，弹窗打开时预填 */
+  /** Last export/import config; prefill when modal opens */
   exportOptions: { ...defaultExportOptions } as ExportOptions,
 };

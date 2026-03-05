@@ -1,4 +1,4 @@
-/* Step 1: PDF 显示 */
+/* Step 1: PDF display */
 * {
   box-sizing: border-box;
 }
@@ -231,7 +231,7 @@ body {
   border-radius: 4px;
 }
 
-/* 导出配置弹窗 */
+/* Export options modal */
 .modal {
   position: fixed;
   inset: 0;

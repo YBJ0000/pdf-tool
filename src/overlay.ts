@@ -2,7 +2,7 @@ import type { DragRect, Corner } from './types.ts';
 import { state } from './state.ts';
 import { HANDLE_SIZE, MIN_RECT_SIZE, CLOSE_BUTTON_SIZE, EDGE_TOL } from './constants.ts';
 
-/** 将鼠标事件坐标转换为 overlay 上的像素坐标（与 PDF 该页 canvas 一致） */
+/** Convert mouse event coordinates to overlay pixel coordinates (matches PDF page canvas) */
 export function getLocalCoords(
   overlay: HTMLCanvasElement,
   clientX: number,
@@ -17,7 +17,7 @@ export function getLocalCoords(
   };
 }
 
-/** 在某一页的 overlay 上重绘所有该页的矩形 + 当前拖拽中的矩形；selectedIdx 用于高亮选中项；选中项画四角手柄 */
+/** Redraw all rectangles on a page overlay + current drag rect; selectedIdx highlights selection; draw corner handles for selected item */
 export function drawOverlay(
   overlay: HTMLCanvasElement,
   pageNum: number,
@@ -82,7 +82,7 @@ export function drawOverlay(
   }
 }
 
-/** 若 (localX, localY) 在当前选中框的某个角柄上，返回 { corner }，否则返回 null */
+/** If (localX, localY) is on a corner handle of the selected box, return { corner }; otherwise null */
 export function getHandleAt(
   _overlay: HTMLCanvasElement,
   pageNum: number,
@@ -107,7 +107,7 @@ export function getHandleAt(
   return null;
 }
 
-/** 若 (localX, localY) 在当前选中框的关闭按钮内，返回 true */
+/** Return true if (localX, localY) is inside the close button of the selected box */
 export function getCloseButtonHit(
   _overlay: HTMLCanvasElement,
   pageNum: number,
@@ -127,7 +127,7 @@ export function getCloseButtonHit(
   );
 }
 
-/** 若 (localX, localY) 在某个字段矩形内（含边线），返回该字段在 fields 中的下标（取最上层）；否则返回 -1 */
+/** If (localX, localY) is inside a field rect (including edge), return its index in fields (topmost); otherwise -1 */
 export function getFieldAtPoint(
   _overlay: HTMLCanvasElement,
   pageNum: number,
@@ -143,7 +143,7 @@ export function getFieldAtPoint(
   return -1;
 }
 
-/** 若 (localX, localY) 在当前选中框的四条边上（不含四角、不含关闭按钮），返回 true */
+/** Return true if (localX, localY) is on one of the four edges of the selected box (not corners, not close button) */
 export function getEdgeHit(
   _overlay: HTMLCanvasElement,
   pageNum: number,
@@ -177,7 +177,7 @@ export function getEdgeHit(
   return top || bottom || left || right;
 }
 
-/** 根据拖拽角与当前鼠标位置更新字段的 x,y,width,height */
+/** Update field x,y,width,height from drag corner and current mouse position */
 export function applyResize(
   fieldIndex: number,
   corner: Corner,
